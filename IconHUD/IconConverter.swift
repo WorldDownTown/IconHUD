@@ -28,6 +28,43 @@ final class IconConverter {
         }
     }
     
+    // MARK: - #####>
+    
+    private func swapImagePathInContentJson() {
+        
+    }
+    
+    private func restoreImagePathInContentJson() {
+        
+    }
+    
+    private func overwriteImagePathToBuildDir(contentJsonPath: String) {
+        guard let jsonDict = convertJsonToDict(jsonFilePath: contentJsonPath) else { return }
+        guard let images = jsonDict["images"] as? [[String : String]] else { return }
+        let modifiedImages = images
+            .reduce(into: [[String : String]]()) { (result, dict) in
+                if let filename = dict["filename"] {
+                    var d = dict
+                    d["filename"] = filename
+                    result.append(d)
+                } else {
+                    result.append(dict)
+                }
+            }
+        var modifiedJsonDict = jsonDict
+        modifiedJsonDict["images"] = modifiedImages as AnyObject
+        let appIconSetContentsJsonPaths = contentsJsonPath()
+
+        // TODO: Backup current Content.json file
+        
+        // TBI
+        
+        // TODO: Convert ret to Content.json file and overwrite current Content.json file by new one
+        convertDictToJsonAndWrite(dict: modifiedJsonDict, writeToPaths: appIconSetContentsJsonPaths)
+    }
+    
+    // MARK: - <#####
+    
     private func modifyIcon(ignoreDebugBuild: Bool) {        
         ConsoleIO.printNotice()
         let buildConfig = ConsoleIO.environmentVariable(key: .buildConfig)
@@ -36,10 +73,6 @@ final class IconConverter {
             return
         }
         let appIconSetContentsJsonPaths = contentsJsonPath()
-        guard appIconSetContentsJsonPaths.count > 0 else {
-            print("Error: Contents.json not found.")
-            return
-        }
         let iconImagePaths = imagePaths(contentJsonPaths: appIconSetContentsJsonPaths)
         iconImagePaths
             .forEach { (pathInAsset: String, pathInBuildDir: String) in
@@ -67,7 +100,7 @@ final class IconConverter {
                 }
                 return String(format: "%@/%@", path, relativePath)
             })
-            .flatMap() { $0 }
+            .compactMap() { $0 }
             .filter({ (path) -> Bool in
                 return path.hasSuffix("appiconset")
             })
@@ -75,16 +108,36 @@ final class IconConverter {
                 return String(format: "%@/Contents.json", path)
             })
             ?? []
+        if appIconSetContentsJsonPaths.count == 0 {
+            print("Error: Contents.json not found.")
+        }
         return appIconSetContentsJsonPaths
+    }
+    
+    private func convertDictToJsonAndWrite(dict: [String : AnyObject], writeToPaths: [String]) {
+        let data = try? JSONSerialization.data(withJSONObject: dict, options: .prettyPrinted)
+        writeToPaths.forEach { (path) in
+            let fileURL = URL(fileURLWithPath: path)
+            do {
+                try data?.write(to: fileURL, options: [])
+            } catch {
+                print("Error: Can't write new Content.json to a file at \(path)")
+            }
+        }
+    }
+    
+    private func convertJsonToDict(jsonFilePath: String) -> [String : AnyObject]? {
+        guard let jsonData = try? Data(contentsOf: URL(fileURLWithPath: jsonFilePath)),
+            let jsonObject = try? JSONSerialization.jsonObject(with: jsonData, options: []),
+            let jsonDict = jsonObject as? [String : AnyObject] else { return nil }
+        return jsonDict
     }
     
     private func imagePaths(contentJsonPaths: [String]) -> [(pathInAsset: String, pathInBuildDir: String)] {
         return contentJsonPaths
             .map { (contentJsonPath) -> [(pathInAsset: String, pathInBuildDir: String)] in
                 print("Contents.json path -> \(contentJsonPath)")
-                if let jsonData = try? Data(contentsOf: URL(fileURLWithPath: contentJsonPath)),
-                    let jsonObject = try? JSONSerialization.jsonObject(with: jsonData, options: []),
-                    let jsonDict = jsonObject as? [String : AnyObject] {
+                if let jsonDict = convertJsonToDict(jsonFilePath: contentJsonPath) {
                     let imageNamesArray = analyzeJsonAndGetImageNames(jsonDict: jsonDict)
                     let imagePathsArray = imageNamesArray
                         .map({ (imageNames) -> (pathInAsset: String, pathInBuildDir: String) in
@@ -174,7 +227,7 @@ final class IconConverter {
                 return (imageNameInAsset: filename,
                         imageNameInBuildDir: convertImageName(size: size, scale: scale, idiom: idiom))
             })
-            .flatMap() { $0 }
+            .compactMap() { $0 }
     }
     
     private func convertImageName(size: String, scale: String, idiom: String) -> String {
