@@ -6,7 +6,4 @@
 //  Copyright © 2017年 tueno Ueno. All rights reserved.
 //
 
-import Foundation
-
-let converter = IconConverter()
-converter.staticMode()
+IconConverter().staticMode()

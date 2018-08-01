@@ -1,0 +1,27 @@
+opt_in_rules:
+  - force_unwrapping
+  - empty_count
+
+disabled_rules:
+  - todo # TODO, FIXMEは検索ですぐに見つけられるのでwarningしない
+  - nesting
+  - identifier_name
+  - type_name
+  - cyclomatic_complexity
+  - function_body_length
+  - file_length
+  - redundant_string_enum_value
+  - block_based_kvo # iOS10由来の不具合回避のため
+
+excluded:
+  - Pods
+  - Carthage
+
+identifier_name:
+  excluded: # excluded via string array
+    - URL
+    - URLResponse
+    - URLRequest
+
+line_length: 300
+type_body_length: 400

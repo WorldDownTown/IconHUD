@@ -8,78 +8,64 @@
 
 import Foundation
 
-final class ConsoleIO {
-    
+struct ConsoleIO {
     // MARK: Input
-    
-    class func optionsInCommandLineArguments() -> [OptionType] {
-        let arguments = CommandLine.arguments
-        let containingOptions = OptionType.allValues
-            .filter { (option) -> Bool in
-                return option.values
-                    .filter({ (value) -> Bool in
-                        return arguments.contains(value)
-                    })
-                    .count > 0
-            }
-        return containingOptions
+
+    static var optionsInCommandLineArguments: [OptionType] {
+        return OptionType.allValues
+            .filter { option in option.values.contains(where: { CommandLine.arguments.contains($0) }) }
     }
-    
-    class func optionArgument(option: OptionType) -> String? {
-        let arguments = CommandLine.arguments
-        let index = arguments
+
+    static func optionArgument(option: OptionType) -> String? {
+        let arguments: [String] = CommandLine.arguments
+        let index: Int? = arguments
             .enumerated()
-            .filter { (index: Int, argument: String) -> Bool in
-                return option.values.contains(argument)
-            }
-            .first?
-            .offset
-        guard let i = index, i+1 < arguments.count, !arguments[i+1].hasPrefix("-") else {
+            .first(where: { option.values.contains($0.element) })
+            .map { $0.offset + 1 }
+        guard let i = index, i < arguments.count, !arguments[i].hasPrefix("-") else {
             return nil
         }
-        return arguments[i+1]
+        return arguments[i]
     }
-    
-    class func environmentVariable(key: EnvironmentVariable) -> String {
+
+    static func environmentVariable(key: EnvironmentVariable) -> String {
         return ProcessInfo().environment[key.rawValue] ?? ""
     }
-    
-    class var executableName: String {
-        get {
-            return CommandLine.arguments.first!
-                .components(separatedBy: "/")
-                .last!
-        }
+
+    static var executableName: String {
+        return CommandLine.arguments
+            .first?
+            .components(separatedBy: "/")
+            .last ?? ""
     }
-    
+
     // MARK: Output
-    
-    class func printVersion() {
-        print(IconConverter.Version)
+
+    static func printVersion() {
+        print(IconConverter.version)
     }
-    
-    class func printUsage() {
-        print("Usage:")
-        print("")
-        print("     Add the line below to RunScript phase of your Xcode project.")
-        print("")
-        print("     \(executableName)")
-        print("")
-        print("Options:")
-        print("")
-        OptionType.allValues
-            .forEach { (option) in
-                let argumentsStr = option.valuesToPrint
-                print("     [\(argumentsStr)]\(option.usage)")
-            }
+
+    static func printUsage() {
+        print("""
+        Usage:
+
+             Add the line below to RunScript phase of your Xcode project.
+
+             \(executableName)
+
+        Options:
+
+        \(OptionType.allValues.map { "     [\($0.valuesToPrint)]\($0.usage)" }.joined(separator: "\n"))
+        """)
     }
-    
-    class func printNotice() {
-        print("")
-        print("*** IMPORTANT ***")
-        print("\(executableName) currently uses BuildConfig name to detect Relase build.")
-        print("So if you change Release BuildConfig name, \(executableName) will process icon even if you want to build for release.")
-        print("")
+
+    static func printNotice() {
+        print("""
+
+        *** IMPORTANT ***
+        \(executableName) currently uses BuildConfig name to detect Relase build.
+        So if you change Release BuildConfig name, \(executableName) will process icon even if you want to build for release.
+
+        """)
     }
-    
 }

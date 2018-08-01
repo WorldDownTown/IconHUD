@@ -7,11 +7,11 @@
 //
 
 enum EnvironmentVariable: String {
-    case buildConfig                    = "CONFIGURATION"
-    case branchNameOnTravisCI           = "TRAVIS_BRANCH"
-    case projectRoot                    = "SOURCE_ROOT"
-    case projectName                    = "PROJECT_NAME"
-    case infoPlist                      = "INFOPLIST_FILE"
-    case configurationBuildDir          = "CONFIGURATION_BUILD_DIR"
+    case buildConfig = "CONFIGURATION"
+    case branchNameOnTravisCI = "TRAVIS_BRANCH"
+    case projectRoot = "SOURCE_ROOT"
+    case projectName = "PROJECT_NAME"
+    case infoPlist = "INFOPLIST_FILE"
+    case configurationBuildDir = "CONFIGURATION_BUILD_DIR"
     case unlocalizedResourcesFolderPath = "UNLOCALIZED_RESOURCES_FOLDER_PATH"
 }

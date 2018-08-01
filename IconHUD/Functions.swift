@@ -8,24 +8,26 @@
 
 import Foundation
 
-func shell(launchPath: String, currentDirPath: String?, arguments: [String]) -> String {
-    let task = Process()
-    task.launchPath = launchPath
-    if let currentDirPath = currentDirPath {
-        task.currentDirectoryPath = currentDirPath
+private func shell(launchPath: String, currentDirectoryPath: String?, arguments: [String]) -> String {
+    let process: Process = .init()
+    process.launchPath = launchPath
+    if let currentDirectoryPath = currentDirectoryPath {
+        process.currentDirectoryPath = currentDirectoryPath
     }
-    task.arguments      = arguments
-    let pipe            = Pipe()
-    task.standardOutput = pipe
-    task.launch()
-    let data   = pipe.fileHandleForReading.readDataToEndOfFile()
-    let output = String(data: data, encoding: String.Encoding.utf8)!
-    return output.replacingOccurrences(of: "\n", with: "")
+    process.arguments = arguments
+    let pipe: Pipe = .init()
+    process.standardOutput = pipe
+    process.launch()
+    let data: Data = pipe.fileHandleForReading.readDataToEndOfFile()
+    let output: String? = String(data: data, encoding: .utf8)
+    return output?.replacingOccurrences(of: "\n", with: "") ?? ""
 }
 
-func bash(command: String, currentDirPath: String?, arguments: [String]) -> String {
-    let whichPathForCommand = shell(launchPath: "/bin/bash", currentDirPath: nil, arguments: [ "-l", "-c", "which \(command)" ])
+func bash(command: String, currentDirectoryPath: String?, arguments: [String]) -> String {
+    let whichPathForCommand: String = shell(launchPath: "/bin/bash",
+                                            currentDirectoryPath: nil,
+                                            arguments: ["-l", "-c", "which \(command)"])
     return shell(launchPath: whichPathForCommand,
-                 currentDirPath: currentDirPath,
+                 currentDirectoryPath: currentDirectoryPath,
                  arguments: arguments)
 }

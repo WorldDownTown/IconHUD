@@ -6,49 +6,36 @@
 //  Copyright © 2017年 Tomonori Ueno. All rights reserved.
 //
 
-final class AppInfo {
-    
-    class var branchName: String {
-        get {
-            let branchName = bash(command:"git",
-                                  currentDirPath: ConsoleIO.environmentVariable(key: .projectRoot),
-                                  arguments: ["rev-parse", "--abbrev-ref", "HEAD"])
-            if branchName == "HEAD" {
-                // On Travis CI
-                return ConsoleIO.environmentVariable(key: .branchNameOnTravisCI)
-            } else {
-                return branchName
-            }
+struct AppInfo {
+    static var branchName: String {
+        let branchName: String = bash(command: "git",
+                                      currentDirectoryPath: ConsoleIO.environmentVariable(key: .projectRoot),
+                                      arguments: ["rev-parse", "--abbrev-ref", "HEAD"])
+        if branchName == "HEAD" {
+            // On Travis CI
+            return ConsoleIO.environmentVariable(key: .branchNameOnTravisCI)
+        } else {
+            return branchName
         }
     }
 
-    class var commitId: String {
-        get {
-            let commitId = bash(command: "git",
-                                currentDirPath: ConsoleIO.environmentVariable(key: .projectRoot),
-                                arguments: ["rev-parse", "--short", "HEAD"])
-            return commitId
-        }
+    static var commitId: String {
+        return bash(command: "git",
+                    currentDirectoryPath: ConsoleIO.environmentVariable(key: .projectRoot),
+                    arguments: ["rev-parse", "--short", "HEAD"])
     }
-    
-    class var buildNumber: String {
-        get {
-            let infoPlist   = ConsoleIO.environmentVariable(key: .infoPlist)
-            let buildNumber = bash(command: "/usr/libexec/PlistBuddy",
-                                   currentDirPath: ConsoleIO.environmentVariable(key: .projectRoot),
-                                   arguments: ["-c", "Print CFBundleVersion", infoPlist])
-            return buildNumber
-        }
+
+    static var buildNumber: String {
+        let infoPlist: String = ConsoleIO.environmentVariable(key: .infoPlist)
+        return bash(command: "/usr/libexec/PlistBuddy",
+                    currentDirectoryPath: ConsoleIO.environmentVariable(key: .projectRoot),
+                    arguments: ["-c", "Print CFBundleVersion", infoPlist])
     }
-    
-    class var versionNumber: String {
-        get {
-            let infoPlist = ConsoleIO.environmentVariable(key: .infoPlist)
-            let versionNumber = bash(command: "/usr/libexec/PlistBuddy",
-                                     currentDirPath: ConsoleIO.environmentVariable(key: .projectRoot),
-                                     arguments: ["-c", "Print CFBundleShortVersionString", infoPlist])
-            return versionNumber
-        }
+
+    static var versionNumber: String {
+        let infoPlist: String = ConsoleIO.environmentVariable(key: .infoPlist)
+        return bash(command: "/usr/libexec/PlistBuddy",
+                    currentDirectoryPath: ConsoleIO.environmentVariable(key: .projectRoot),
+                    arguments: ["-c", "Print CFBundleShortVersionString", infoPlist])
     }
-    
 }

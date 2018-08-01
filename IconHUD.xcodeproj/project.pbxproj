@@ -70,11 +70,11 @@
 			isa = PBXGroup;
 			children = (
 				752A0EBC1EAF08050022C78D /* enum */,
-				2D4BD8E61EAC812E001708F3 /* main.swift */,
-				752A0EA61EADED3D0022C78D /* ConsoleIO.swift */,
-				752A0EAA1EADF7760022C78D /* IconConverter.swift */,
 				75E606F31EAF17B60084A085 /* AppInfo.swift */,
+				752A0EA61EADED3D0022C78D /* ConsoleIO.swift */,
 				75E606F51EAF1A9E0084A085 /* Functions.swift */,
+				752A0EAA1EADF7760022C78D /* IconConverter.swift */,
+				2D4BD8E61EAC812E001708F3 /* main.swift */,
 			);
 			path = IconHUD;
 			sourceTree = "<group>";
@@ -82,8 +82,8 @@
 		752A0EBC1EAF08050022C78D /* enum */ = {
 			isa = PBXGroup;
 			children = (
-				752A0EBD1EAF080D0022C78D /* OptionType.swift */,
 				752A0EBF1EAF084C0022C78D /* EnvironmentVariable.swift */,
+				752A0EBD1EAF080D0022C78D /* OptionType.swift */,
 			);
 			name = enum;
 			sourceTree = "<group>";
@@ -98,6 +98,8 @@
 				2D4BD8DF1EAC812E001708F3 /* Sources */,
 				2D4BD8E01EAC812E001708F3 /* Frameworks */,
 				2D4BD8E11EAC812E001708F3 /* CopyFiles */,
+				CE2735DA2111828200166C11 /* Run Script - SwiftLint */,
+				CE2735DB211182D200166C11 /* ShellScript */,
 			);
 			buildRules = (
 			);
@@ -115,7 +117,7 @@
 			isa = PBXProject;
 			attributes = {
 				LastSwiftUpdateCheck = 0830;
-				LastUpgradeCheck = 0920;
+				LastUpgradeCheck = 0940;
 				ORGANIZATIONNAME = "Tomonori Ueno";
 				TargetAttributes = {
 					2D4BD8E21EAC812E001708F3 = {
@@ -143,18 +145,48 @@
 		};
 /* End PBXProject section */
 
+/* Begin PBXShellScriptBuildPhase section */
+		CE2735DA2111828200166C11 /* Run Script - SwiftLint */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+			);
+			name = "Run Script - SwiftLint";
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "if type swiftlint >/dev/null 2>&1; then\n  swiftlint autocorrect\nfi";
+		};
+		CE2735DB211182D200166C11 /* ShellScript */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "if type swiftformat >/dev/null 2>&1; then\n  swiftformat \\\n    --disable hoistPatternLet,ranges,strongOutlets,trailingCommas \\\n    --stripunusedargs closure-only\nfi";
+		};
+/* End PBXShellScriptBuildPhase section */
+
 /* Begin PBXSourcesBuildPhase section */
 		2D4BD8DF1EAC812E001708F3 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				2D4BD8E71EAC812E001708F3 /* main.swift in Sources */,
-				752A0EC01EAF084C0022C78D /* EnvironmentVariable.swift in Sources */,
-				752A0EA71EADED3D0022C78D /* ConsoleIO.swift in Sources */,
-				75E606F61EAF1A9E0084A085 /* Functions.swift in Sources */,
-				752A0EBE1EAF080D0022C78D /* OptionType.swift in Sources */,
 				75E606F41EAF17B60084A085 /* AppInfo.swift in Sources */,
+				752A0EA71EADED3D0022C78D /* ConsoleIO.swift in Sources */,
+				752A0EC01EAF084C0022C78D /* EnvironmentVariable.swift in Sources */,
+				75E606F61EAF1A9E0084A085 /* Functions.swift in Sources */,
 				752A0EAB1EADF7760022C78D /* IconConverter.swift in Sources */,
+				2D4BD8E71EAC812E001708F3 /* main.swift in Sources */,
+				752A0EBE1EAF080D0022C78D /* OptionType.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -175,6 +207,7 @@
 				CLANG_WARN_BOOL_CONVERSION = YES;
 				CLANG_WARN_COMMA = YES;
 				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
 				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
 				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
 				CLANG_WARN_EMPTY_BODY = YES;
@@ -182,6 +215,7 @@
 				CLANG_WARN_INFINITE_RECURSION = YES;
 				CLANG_WARN_INT_CONVERSION = YES;
 				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
 				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
 				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
 				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
@@ -230,6 +264,7 @@
 				CLANG_WARN_BOOL_CONVERSION = YES;
 				CLANG_WARN_COMMA = YES;
 				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
 				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
 				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
 				CLANG_WARN_EMPTY_BODY = YES;
@@ -237,6 +272,7 @@
 				CLANG_WARN_INFINITE_RECURSION = YES;
 				CLANG_WARN_INT_CONVERSION = YES;
 				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
 				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
 				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
 				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
@@ -260,6 +296,7 @@
 				MACOSX_DEPLOYMENT_TARGET = 10.9;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				SDKROOT = macosx;
+				SWIFT_COMPILATION_MODE = wholemodule;
 			};
 			name = Release;
 		};
@@ -268,7 +305,6 @@
 			buildSettings = {
 				DEVELOPMENT_TEAM = RQ9264QWZ8;
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				SWIFT_SWIFT3_OBJC_INFERENCE = On;
 				SWIFT_VERSION = 4.0;
 			};
 			name = Debug;
@@ -278,7 +314,6 @@
 			buildSettings = {
 				DEVELOPMENT_TEAM = RQ9264QWZ8;
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				SWIFT_SWIFT3_OBJC_INFERENCE = On;
 				SWIFT_VERSION = 4.0;
 			};
 			name = Release;
