@@ -16,6 +16,24 @@ struct IconConverter {
         static let debugBuildConfigName: String = "Debug"
     }
 
+    private var contentsJsonPaths: [String] {
+        let targetDir: String = ConsoleIO.optionArgument(option: .sourceDirName) ?? ConsoleIO.environmentVariable(key: .projectName)
+        let path: String = ConsoleIO.environmentVariable(key: .projectRoot) + "/" + targetDir
+        return FileManager.default
+            .enumerator(atPath: path)?
+            .compactMap { $0 as? String }
+            .filter { $0.hasSuffix("appiconset") }
+            .map { "\(path)/\($0)/Contents.json" }
+            ?? []
+    }
+
+    private var currentDate: String {
+        let cal: Calendar = .init(identifier: .gregorian)
+        let c: DateComponents = cal.dateComponents([.year, .month, .day, .minute, .hour], from: Date())
+        guard let hour = c.hour, let minute = c.minute, let month = c.month, let day = c.day, let year = c.year else { return "" }
+        return String(format: "%02d:%02d %02d/%02d %04d", hour, minute, month, day, year)
+    }
+
     func staticMode() {
         let arguments: [OptionType] = ConsoleIO.optionsInCommandLineArguments
         if arguments.contains(.help) {
@@ -30,11 +48,13 @@ struct IconConverter {
     private func modifyIcon(ignoreDebugBuild: Bool) {
         ConsoleIO.printNotice()
         let buildConfig: String = ConsoleIO.environmentVariable(key: .buildConfig)
-        guard buildConfig != Constant.releaseBuildConfigName && (buildConfig != Constant.debugBuildConfigName || !ignoreDebugBuild) else {
-            print("\(ConsoleIO.executableName) stopped because it is running for \(buildConfig) build.")
-            return
+        guard buildConfig != Constant.releaseBuildConfigName,
+            buildConfig != Constant.debugBuildConfigName || !ignoreDebugBuild else {
+                print("\(ConsoleIO.executableName) stopped because it is running for \(buildConfig) build.")
+                return
         }
-        let appIconSetContentsJsonPaths: [String] = contentsJsonPath
+        let appIconSetContentsJsonPaths: [String] = contentsJsonPaths
+        print(appIconSetContentsJsonPaths)
         guard !appIconSetContentsJsonPaths.isEmpty else {
             print("Error: Contents.json not found.")
             return
@@ -46,17 +66,6 @@ struct IconConverter {
                                            pathInBuildDir: pathInBuildDir)
         }
         processImages(imagePaths: iconImagePaths)
-    }
-
-    private var contentsJsonPath: [String] {
-        let targetDir: String = ConsoleIO.optionArgument(option: .sourceDirName) ?? ConsoleIO.environmentVariable(key: .projectName)
-        let path: String = ConsoleIO.environmentVariable(key: .projectRoot) + "/" + targetDir
-        return FileManager.default
-            .enumerator(atPath: path)?
-            .compactMap { $0 as? String }
-            .filter { $0.hasSuffix("appiconset") }
-            .map { "\(path)/\($0)/Contents.json" }
-            ?? []
     }
 
     private func imagePaths(contentJsonPaths: [String]) -> [(pathInAsset: String, pathInBuildDir: String)] {
@@ -74,6 +83,27 @@ struct IconConverter {
                                 $0.imageNameInBuildDir) }
             }
             .flatMap { $0 }
+    }
+
+    private func analyzeJsonAndGetImageNames(jsonDict: [String: Any]) -> [(imageNameInAsset: String, imageNameInBuildDir: String)] {
+        return (jsonDict["images"] as? [[String: String]])?
+            .compactMap { dic in
+                guard let filename = dic["filename"], let size = dic["size"], let scale = dic["scale"], let idiom = dic["idiom"] else { return nil }
+                return (imageNameInAsset: filename, imageNameInBuildDir: convertImageName(size: size, scale: scale, idiom: idiom))
+            } ?? []
+    }
+
+    private func convertImageName(size: String, scale: String, idiom: String) -> String {
+        let scaleForFilename: String = scale == "1x" ? "" : "@\(scale)"
+        let idiomForFilename: String = idiom == "ipad" ? "~\(idiom)" : ""
+        return "AppIcon\(size)\(scaleForFilename)\(idiomForFilename).png"
+    }
+
+    /// Copy icon image manually. Otherwise, it modifies already modified icon file when build with cache.
+    private func copyAssetImageToBuildDirectory(pathInAsset: String, pathInBuildDir: String) {
+        let manager: FileManager = .default
+        _ = try? manager.removeItem(atPath: pathInBuildDir)
+        _ = try? manager.copyItem(atPath: pathInAsset, toPath: pathInBuildDir)
     }
 
     private func processImages(imagePaths: [(pathInAsset: String, pathInBuildDir: String)]) {
@@ -112,33 +142,5 @@ struct IconConverter {
                                  "-gravity", "south",
                                  "-composite", path])
         }
-    }
-
-    private var currentDate: String {
-        let cal: Calendar = .init(identifier: .gregorian)
-        let c: DateComponents = cal.dateComponents([.year, .month, .day, .minute, .hour], from: Date())
-        guard let hour = c.hour, let minute = c.minute, let month = c.month, let day = c.day, let year = c.year else { return "" }
-        return String(format: "%02d:%02d %02d/%02d %04d", hour, minute, month, day, year)
-    }
-
-    private func analyzeJsonAndGetImageNames(jsonDict: [String: Any]) -> [(imageNameInAsset: String, imageNameInBuildDir: String)] {
-        return (jsonDict["images"] as? [[String: String]])?
-            .compactMap { dic in
-                guard let filename = dic["filename"], let size = dic["size"], let scale = dic["scale"], let idiom = dic["idiom"] else { return nil }
-                return (imageNameInAsset: filename, imageNameInBuildDir: convertImageName(size: size, scale: scale, idiom: idiom))
-            } ?? []
-    }
-
-    private func convertImageName(size: String, scale: String, idiom: String) -> String {
-        let scaleForFilename: String = scale == "1x" ? "" : "@\(scale)"
-        let idiomForFilename: String = idiom == "ipad" ? "~\(idiom)" : ""
-        return "AppIcon\(size)\(scaleForFilename)\(idiomForFilename).png"
-    }
-
-    /// Copy icon image manually. Otherwise, it modifies already modified icon file when build with cache.
-    private func copyAssetImageToBuildDirectory(pathInAsset: String, pathInBuildDir: String) {
-        let manager: FileManager = .default
-        _ = try? manager.removeItem(atPath: pathInBuildDir)
-        _ = try? manager.copyItem(atPath: pathInAsset, toPath: pathInBuildDir)
     }
 }
