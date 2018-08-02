@@ -34,7 +34,7 @@ struct IconConverter {
             print("\(ConsoleIO.executableName) stopped because it is running for \(buildConfig) build.")
             return
         }
-        let appIconSetContentsJsonPaths: [String] = contentsJsonPath()
+        let appIconSetContentsJsonPaths: [String] = contentsJsonPath
         guard !appIconSetContentsJsonPaths.isEmpty else {
             print("Error: Contents.json not found.")
             return
@@ -48,7 +48,7 @@ struct IconConverter {
         processImages(imagePaths: iconImagePaths)
     }
 
-    private func contentsJsonPath() -> [String] {
+    private var contentsJsonPath: [String] {
         let targetDir: String = ConsoleIO.optionArgument(option: .sourceDirName) ?? ConsoleIO.environmentVariable(key: .projectName)
         let path: String = ConsoleIO.environmentVariable(key: .projectRoot) + "/" + targetDir
         return FileManager.default
@@ -77,13 +77,14 @@ struct IconConverter {
     }
 
     private func processImages(imagePaths: [(pathInAsset: String, pathInBuildDir: String)]) {
-        let dateStr: String = currentDate()
+        let dateStr: String = currentDate
         let buildConfig: String = ConsoleIO.environmentVariable(key: .buildConfig)
         let caption: String = "\(AppInfo.versionNumber)(\(AppInfo.buildNumber)) \(buildConfig) \n\(AppInfo.branchName) \n\(AppInfo.commitId)"
         let topHUDHeight: Int = 20
         let bottomHUDHeight: Int = 48
 
-        for path in imagePaths.map({ $0.pathInBuildDir }) {
+        let paths: [String] = imagePaths.map { $0.pathInBuildDir }
+        for path in paths {
             let imageWidthStr: String = bash(command: "identify",
                                              currentDirectoryPath: nil,
                                              arguments: ["-format", "%w", path])
@@ -113,7 +114,7 @@ struct IconConverter {
         }
     }
 
-    private func currentDate() -> String {
+    private var currentDate: String {
         let cal: Calendar = .init(identifier: .gregorian)
         let c: DateComponents = cal.dateComponents([.year, .month, .day, .minute, .hour], from: Date())
         guard let hour = c.hour, let minute = c.minute, let month = c.month, let day = c.day, let year = c.year else { return "" }
