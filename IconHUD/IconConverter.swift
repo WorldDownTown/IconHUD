@@ -16,7 +16,17 @@ struct IconConverter {
         static let debugBuildConfigName: String = "Debug"
     }
 
-    private var contentsJsonPaths: [String] {
+    private struct PathInfo {
+        let inAsset: String
+        let inBuildDir: String
+    }
+
+    private struct ImageNameInfo {
+        let inAsset: String
+        let inBuildDir: String
+    }
+
+    private var contentsJSONPaths: [String] {
         let targetDir: String = ConsoleIO.optionArgument(option: .sourceDirName) ?? ConsoleIO.environmentVariable(key: .projectName)
         let path: String = ConsoleIO.environmentVariable(key: .projectRoot) + "/" + targetDir
         return FileManager.default
@@ -53,43 +63,43 @@ struct IconConverter {
                 print("\(ConsoleIO.executableName) stopped because it is running for \(buildConfig) build.")
                 return
         }
-        let appIconSetContentsJsonPaths: [String] = contentsJsonPaths
-        print(appIconSetContentsJsonPaths)
-        guard !appIconSetContentsJsonPaths.isEmpty else {
+        let appIconSetContentsJSONPaths: [String] = contentsJSONPaths
+        print(appIconSetContentsJSONPaths)
+        guard !appIconSetContentsJSONPaths.isEmpty else {
             print("Error: Contents.json not found.")
             return
         }
-        let iconImagePaths: [(String, String)] = imagePaths(contentJsonPaths: appIconSetContentsJsonPaths)
-        for (pathInAsset, pathInBuildDir) in iconImagePaths {
-            print("Copy \(pathInAsset) to \(pathInBuildDir).")
-            copyAssetImageToBuildDirectory(pathInAsset: pathInAsset,
-                                           pathInBuildDir: pathInBuildDir)
+        let iconImagePaths: [PathInfo] = imagePaths(jsonPaths: appIconSetContentsJSONPaths)
+        for pathInfo in iconImagePaths {
+            print("Copy \(pathInfo.inAsset) to \(pathInfo.inBuildDir).")
+            copyAssetImageToBuildDirectory(pathInfo: pathInfo)
         }
         processImages(imagePaths: iconImagePaths)
     }
 
-    private func imagePaths(contentJsonPaths: [String]) -> [(pathInAsset: String, pathInBuildDir: String)] {
-        return contentJsonPaths
-            .compactMap { (contentJsonPath: String) -> [(pathInAsset: String, pathInBuildDir: String)]? in
-                print("Contents.json path -> \(contentJsonPath)")
-
-                return (try? Data(contentsOf: URL(fileURLWithPath: contentJsonPath)))
-                    .flatMap { try? JSONSerialization.jsonObject(with: $0) }
-                    .flatMap { $0 as? [String: Any] }
-                    .map { analyzeJsonAndGetImageNames(jsonDict: $0) }?
-                    .map { (pathInAsset: NSString(string: contentJsonPath).deletingLastPathComponent + "/" + $0.imageNameInAsset,
-                            pathInBuildDir: ConsoleIO.environmentVariable(key: .configurationBuildDir) + "/" +
-                                ConsoleIO.environmentVariable(key: .unlocalizedResourcesFolderPath) + "/" +
-                                $0.imageNameInBuildDir) }
-            }
+    private func imagePaths(jsonPaths: [String]) -> [PathInfo] {
+        return jsonPaths
+            .compactMap { imagePaths(jsonPath: $0) }
             .flatMap { $0 }
     }
 
-    private func analyzeJsonAndGetImageNames(jsonDict: [String: Any]) -> [(imageNameInAsset: String, imageNameInBuildDir: String)] {
+    private func imagePaths(jsonPath: String) -> [PathInfo]? {
+        print("Contents.json path -> \(jsonPath)")
+        return (try? Data(contentsOf: URL(fileURLWithPath: jsonPath)))
+            .flatMap { try? JSONSerialization.jsonObject(with: $0) }
+            .flatMap { $0 as? [String: Any] }
+            .map { analyzeJSONAndGetImageNames(jsonDict: $0) }?
+            .map { PathInfo(inAsset: NSString(string: jsonPath).deletingLastPathComponent + "/" + $0.inAsset,
+                            inBuildDir: ConsoleIO.environmentVariable(key: .configurationBuildDir) + "/" +
+                                ConsoleIO.environmentVariable(key: .unlocalizedResourcesFolderPath) + "/" +
+                                $0.inBuildDir) }
+    }
+
+    private func analyzeJSONAndGetImageNames(jsonDict: [String: Any]) -> [ImageNameInfo] {
         return (jsonDict["images"] as? [[String: String]])?
             .compactMap { dic in
                 guard let filename = dic["filename"], let size = dic["size"], let scale = dic["scale"], let idiom = dic["idiom"] else { return nil }
-                return (imageNameInAsset: filename, imageNameInBuildDir: convertImageName(size: size, scale: scale, idiom: idiom))
+                return ImageNameInfo(inAsset: filename, inBuildDir: convertImageName(size: size, scale: scale, idiom: idiom))
             } ?? []
     }
 
@@ -100,20 +110,20 @@ struct IconConverter {
     }
 
     /// Copy icon image manually. Otherwise, it modifies already modified icon file when build with cache.
-    private func copyAssetImageToBuildDirectory(pathInAsset: String, pathInBuildDir: String) {
+    private func copyAssetImageToBuildDirectory(pathInfo: PathInfo) {
         let manager: FileManager = .default
-        _ = try? manager.removeItem(atPath: pathInBuildDir)
-        _ = try? manager.copyItem(atPath: pathInAsset, toPath: pathInBuildDir)
+        _ = try? manager.removeItem(atPath: pathInfo.inBuildDir)
+        _ = try? manager.copyItem(atPath: pathInfo.inAsset, toPath: pathInfo.inBuildDir)
     }
 
-    private func processImages(imagePaths: [(pathInAsset: String, pathInBuildDir: String)]) {
+    private func processImages(imagePaths: [PathInfo]) {
         let dateStr: String = currentDate
         let buildConfig: String = ConsoleIO.environmentVariable(key: .buildConfig)
         let caption: String = "\(AppInfo.versionNumber)(\(AppInfo.buildNumber)) \(buildConfig) \n\(AppInfo.branchName) \n\(AppInfo.commitId)"
         let topHUDHeight: Int = 20
         let bottomHUDHeight: Int = 48
 
-        let paths: [String] = imagePaths.map { $0.pathInBuildDir }
+        let paths: [String] = imagePaths.map { $0.inBuildDir }
         for path in paths {
             let imageWidthStr: String = bash(command: "identify",
                                              currentDirectoryPath: nil,
