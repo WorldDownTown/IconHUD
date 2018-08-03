@@ -26,7 +26,7 @@ struct IconConverter {
         let inBuildDir: String
     }
 
-    private var contentsJSONPaths: [String] {
+    private var contentsJSONPaths: [String]? {
         let targetDir: String = ConsoleIO.optionArgument(option: .sourceDirName) ?? ConsoleIO.environmentVariable(key: .projectName)
         let path: String = ConsoleIO.environmentVariable(key: .projectRoot) + "/" + targetDir
         return FileManager.default
@@ -34,7 +34,6 @@ struct IconConverter {
             .compactMap { $0 as? String }
             .filter { $0.hasSuffix("appiconset") }
             .map { "\(path)/\($0)/Contents.json" }
-            ?? []
     }
 
     private var currentDate: String {
@@ -60,15 +59,15 @@ struct IconConverter {
         let buildConfig: String = ConsoleIO.environmentVariable(key: .buildConfig)
         guard buildConfig != Constant.releaseBuildConfigName,
             buildConfig != Constant.debugBuildConfigName || !ignoreDebugBuild else {
-                print("\(ConsoleIO.executableName) stopped because it is running for \(buildConfig) build.")
-                return
+            print("\(ConsoleIO.executableName) stopped because it is running for \(buildConfig) build.")
+            return
         }
-        let appIconSetContentsJSONPaths: [String] = contentsJSONPaths
-        print(appIconSetContentsJSONPaths)
-        guard !appIconSetContentsJSONPaths.isEmpty else {
+        guard let appIconSetContentsJSONPaths: [String] = contentsJSONPaths,
+            !appIconSetContentsJSONPaths.isEmpty else {
             print("Error: Contents.json not found.")
             return
         }
+        print(appIconSetContentsJSONPaths)
         let iconImagePaths: [PathInfo] = imagePaths(jsonPaths: appIconSetContentsJSONPaths)
         for pathInfo in iconImagePaths {
             print("Copy \(pathInfo.inAsset) to \(pathInfo.inBuildDir).")
@@ -88,19 +87,19 @@ struct IconConverter {
         return (try? Data(contentsOf: URL(fileURLWithPath: jsonPath)))
             .flatMap { try? JSONSerialization.jsonObject(with: $0) }
             .flatMap { $0 as? [String: Any] }
-            .map { analyzeJSONAndGetImageNames(jsonDict: $0) }?
+            .flatMap { analyzeJSONAndGetImageNames(jsonDict: $0) }?
             .map { PathInfo(inAsset: NSString(string: jsonPath).deletingLastPathComponent + "/" + $0.inAsset,
                             inBuildDir: ConsoleIO.environmentVariable(key: .configurationBuildDir) + "/" +
                                 ConsoleIO.environmentVariable(key: .unlocalizedResourcesFolderPath) + "/" +
                                 $0.inBuildDir) }
     }
 
-    private func analyzeJSONAndGetImageNames(jsonDict: [String: Any]) -> [ImageNameInfo] {
+    private func analyzeJSONAndGetImageNames(jsonDict: [String: Any]) -> [ImageNameInfo]? {
         return (jsonDict["images"] as? [[String: String]])?
             .compactMap { dic in
                 guard let filename = dic["filename"], let size = dic["size"], let scale = dic["scale"], let idiom = dic["idiom"] else { return nil }
                 return ImageNameInfo(inAsset: filename, inBuildDir: convertImageName(size: size, scale: scale, idiom: idiom))
-            } ?? []
+            }
     }
 
     private func convertImageName(size: String, scale: String, idiom: String) -> String {
@@ -128,7 +127,7 @@ struct IconConverter {
             let imageWidthStr: String = bash(command: "identify",
                                              currentDirectoryPath: nil,
                                              arguments: ["-format", "%w", path])
-            let hudWidth: Int = Int(imageWidthStr) ?? 0
+            guard let hudWidth = Int(imageWidthStr) else { continue }
             _ = bash(command: "convert",
                      currentDirectoryPath: nil,
                      arguments: ["-background", "#0008",
